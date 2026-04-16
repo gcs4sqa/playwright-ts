@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { PlaywrightDevPage } from '../helpers/playwright-dev-page';
 
 test.describe('navigation', () => {
-  test.beforeEach(async ({ page }) => {
-    // Go to the starting url before each test.
-    await page.goto('https://playwright.dev/');
+   test.beforeEach(async ({ page }) => {
+    const playwrightDev = new PlaywrightDevPage(page);
+    await playwrightDev.goto();
   });
 
   test('main navigation', async ({ page }) => {
