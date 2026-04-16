@@ -21,7 +21,7 @@ pipeline {
                 // If browsers aren't globally installed on the server, 
                 // this command downloads them to the local cache.
                 echo 'Installing Playwright Browsers...'
-                sh 'npx playwright install --with-deps'
+                sh 'npx playwright install'
             }
         }
 
