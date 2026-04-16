@@ -1,38 +1,42 @@
 pipeline {
-    agent {
-        docker {
-            // Use the official Playwright image to avoid manual browser installation
-            image 'mcr.microsoft.com/playwright:v1.45.0-jammy'
-            args '-u root' // Ensures permissions to install/run dependencies
-        }
+    agent any // Or use agent { label 'your-node-label' }
+
+    environment {
+        // Ensures colored output in Jenkins logs
+        FORCE_COLOR = '1'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Pulls code from your GitHub repository
                 checkout scm
             }
         }
 
         stage('Install Dependencies') {
             steps {
+                echo 'Installing npm packages...'
                 sh 'npm install'
+                
+                // If browsers aren't globally installed on the server, 
+                // this command downloads them to the local cache.
+                echo 'Installing Playwright Browsers...'
+                sh 'npx playwright install --with-deps'
             }
         }
 
         stage('Run Playwright Tests') {
             steps {
-                // '|| true' ensures the pipeline continues even if tests fail
-                // so that we can still publish the report in the next stage
-                sh 'npx playwright test || true'
+                echo 'Running Tests...'
+                // Running with --reporter=list/line helps see progress in Jenkins logs
+                sh 'npx playwright test'
             }
         }
     }
 
     post {
         always {
-            // Archives the Playwright HTML report and trace files
+            // Publishes the HTML report
             publishHTML(target: [
                 allowMissing: false,
                 alwaysLinkToLastBuild: true,
@@ -42,8 +46,12 @@ pipeline {
                 reportName: 'Playwright HTML Report'
             ])
             
-            // Optional: Upload test results to the Jenkins build artifacts
+            // Keeps the report files as a zip in the build artifacts
             archiveArtifacts artifacts: 'playwright-report/**', allowEmptyArchive: true
+        }
+        
+        failure {
+            echo 'Tests failed! Check the Playwright HTML Report for details and traces.'
         }
     }
 }
